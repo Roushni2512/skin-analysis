@@ -1,0 +1,8 @@
+flask==2.3.3
+flask-cors
+numpy
+pillow
+tflite-runtime
+mysql-connector-python
+tensorflow==2.13.0
+werkzeug==2.3.7
