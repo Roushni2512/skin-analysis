@@ -1,12 +1,7 @@
 import React, { useState, useRef } from "react";
 import "./index.css";
 
-const API_URL = 
-  // If you open the site in your browser and backend is mapped to host 5001 use localhost:
-  // "http://localhost:5001/predict";
-  // If frontend runs INSIDE docker and uses docker-compose network, use the service name and port:
-  // "http://backend:5000/predict";
-  "http://localhost:5001/predict";
+const API_URL = "http://localhost:5000/detect";
 
 export default function App() {
   const [file, setFile] = useState(null);
@@ -48,7 +43,7 @@ export default function App() {
 
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("image", file); // Backend expects 'image' field
 
       const res = await fetch(API_URL, {
         method: "POST",
@@ -62,16 +57,17 @@ export default function App() {
 
       const data = await res.json();
 
-      // Backend expected to return { prediction: "Eczema", confidence: 0.92 }
+      // Backend returns { prediction: "...", confidence: 0.XX, top3: [...] }
+      // Each top3 item has: { class: "...", confidence: 0.XX, details: { full_name, risk_level, symptoms, ... } }
       setResult({
-        label: data.prediction ?? data.label ?? "Unknown",
-        confidence:
-          typeof data.confidence === "number" ? data.confidence : data.confidence ? Number(data.confidence) : 0,
-        extras: data.extras || [],
+        label: data.prediction,
+        confidence: data.confidence,
+        top3: data.top3 || [],
+        mainDetails: data.top3?.[0]?.details || {}
       });
     } catch (err) {
       console.error(err);
-      setError("Prediction failed. Check backend or network.");
+      setError("Analysis failed. Please ensure the backend server is running.");
     } finally {
       setLoading(false);
     }
@@ -85,18 +81,30 @@ export default function App() {
     if (inputRef.current) inputRef.current.value = "";
   }
 
+  const getRiskClass = (level) => {
+    if (!level) return "";
+    const l = level.toLowerCase();
+    if (l.includes("high")) return "risk-high-bg";
+    if (l.includes("moderate")) return "risk-med-bg";
+    return "risk-low-bg";
+  };
+
   return (
     <div className="page">
       <header className="hero">
-        <h1>AI Skin Detector</h1>
+        <h1>SkinInsight AI</h1>
         <p className="sub">
-          Upload a skin image and our AI will analyze it and show diagnosis with a confidence score.
+          Advanced dermatological analysis using deep learning.
+          Upload a clear photo of a skin lesion for instant identification and risk assessment.
         </p>
       </header>
 
       <main className="container">
-        <section className="panel upload-panel">
-          <h2>Upload Image for Detection</h2>
+        <section className="panel">
+          <h2>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+            Upload Lesion Image
+          </h2>
 
           <div
             className={`dropzone ${preview ? "with-preview" : ""}`}
@@ -108,114 +116,158 @@ export default function App() {
               <img src={preview} alt="preview" className="preview-img" />
             ) : (
               <div className="drop-inner">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" className="upload-ico">
-                  <path d="M12 3v12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M8 7l4-4 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                  <rect x="3" y="11" width="18" height="8" rx="2" stroke="currentColor" strokeWidth="1.6"/>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="upload-ico">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
                 </svg>
                 <div>
-                  <strong>Click or drag an image here</strong>
-                  <div className="hint">PNG/JPG — clear skin closeup works best</div>
+                  <strong>Drag & drop or click to browse</strong>
+                  <div className="hint">Supports PNG, JPG (Max 5MB)</div>
                 </div>
               </div>
             )}
-            <input ref={inputRef} type="file" accept="image/*" onChange={onFileChange} style={{ display: "none" }} />
+            <input ref={inputRef} type="file" name="image" accept="image/*" onChange={onFileChange} style={{ display: "none" }} />
           </div>
 
           <div className="upload-actions">
-            <button className="btn primary" onClick={uploadAndPredict} disabled={loading}>
-              {loading ? "Analyzing..." : "Analyze Image"}
+            <button className="btn primary" onClick={uploadAndPredict} disabled={loading || !file}>
+              {loading ? (
+                <>
+                  <div className="spinner"></div>
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                  Identify Condition
+                </>
+              )}
             </button>
             <button className="btn ghost" onClick={clearAll} disabled={loading}>
-              Clear
+              Reset
             </button>
           </div>
 
-          {error && <div className="error">{error}</div>}
+          {error && (
+            <div className="error">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+              {error}
+            </div>
+          )}
         </section>
 
-        <section className="panel result-panel">
-          <h2>Detection Results</h2>
+        <section className="panel">
+          <h2>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+            Analysis Report
+          </h2>
 
-          <div className="result-content">
-            <div className="result-left">
-              {preview ? (
-                <div className="result-image-wrap">
-                  <img src={preview} alt="uploaded" className="result-image" />
-                </div>
-              ) : (
-                <div className="placeholder">No image uploaded</div>
-              )}
-            </div>
-
-            <div className="result-right">
-              <div className="card">
-                <div className="card-row">
-                  <div>
-                    <div className="label">Primary Detection</div>
-                    <div className="value">{result ? result.label : "—"}</div>
-                  </div>
-
-                  <div className="confidence-wrap">
-                    <CircularProgress percent={result ? Math.round(result.confidence * 100) : 0} />
-                    <div className="confidence-text">{result ? `${Math.round(result.confidence * 100)}%` : "N/A"}</div>
-                  </div>
-                </div>
-
-                <div className="card-row small">
-                  <div>
-                    <div className="label">Additional Objects</div>
-                    <div className="value">{result && result.extras?.length ? result.extras.join(", ") : "None"}</div>
-                  </div>
-
-                  <div>
-                    <div className="label">Timestamp</div>
-                    <div className="value">{result ? new Date().toLocaleString() : "—"}</div>
-                  </div>
-                </div>
-
-                <div className="explain">
-                  <strong>Tip:</strong> If results look wrong, try a closer crop of the lesion with good lighting.
-                </div>
+          <div className="result-card">
+            <div className="main-result">
+              <div>
+                <div className="label-main">Primary Detection</div>
+                <div className="value-main">{result ? result.mainDetails.full_name || result.label : "---"}</div>
+                {result && (
+                  <span className={`risk-badge ${getRiskClass(result.mainDetails.risk_level)}`}>
+                    Risk: {result.mainDetails.risk_level || "Unknown"}
+                  </span>
+                )}
+              </div>
+              <div className="confidence-circle">
+                <CircularProgress percent={result ? Math.round(result.confidence * 100) : 0} />
               </div>
             </div>
+
+            {result ? (
+              <>
+                <div className="details-grid">
+                  <div className="detail-item">
+                    <div className="detail-label">Key Symptoms</div>
+                    <ul className="symptoms-list">
+                      {result.mainDetails.symptoms?.map((s, i) => (
+                        <li key={i} className="symptom-tag">{s}</li>
+                      )) || "N/A"}
+                    </ul>
+                  </div>
+                  <div className="detail-item">
+                    <div className="detail-label">Confidence Score</div>
+                    <div className="detail-value" style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)' }}>
+                      {Math.round(result.confidence * 100)}%
+                    </div>
+                  </div>
+                </div>
+
+                <div className="recommendation-box">
+                  <div className="detail-label" style={{ color: 'white', opacity: 0.9, marginBottom: '0.5rem' }}>Medical Guidance</div>
+                  {result.mainDetails.recommendation || "Maintain monitoring and consult a professional if changes occur."}
+                  {result.mainDetails.warning && (
+                    <div style={{ marginTop: '0.5rem', color: '#fca5a5', fontWeight: 600, fontSize: '0.8rem' }}>
+                      ⚠️ {result.mainDetails.warning}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '1rem' }}>
+                  Disclaimer: This is an AI-assisted analysis and not a final medical diagnosis.
+                  Always seek professional medical advice.
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.2, marginBottom: '1rem' }}>
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" />
+                </svg>
+                <p>Upload an image to generate a detailed report.</p>
+              </div>
+            )}
           </div>
         </section>
       </main>
 
-      <footer className="footer">Built with ❤️ — AI Skin Detector</footer>
+      <footer className="footer">
+        Powered by SkinInsight Intelligence • 2024
+      </footer>
     </div>
   );
 }
 
-/* ---------- small helper: circular progress ---------- */
-function CircularProgress({ percent = 0, size = 86, stroke = 8 }) {
+function CircularProgress({ percent = 0, size = 100, stroke = 8 }) {
   const radius = (size - stroke) / 2;
   const circ = 2 * Math.PI * radius;
   const offset = circ - (percent / 100) * circ;
   return (
-    <svg width={size} height={size} className="progress-ring" viewBox={`0 0 ${size} ${size}`}>
-      <defs>
-        <linearGradient id="g" x1="0" x2="1">
-          <stop offset="0%" stopColor="#7c3aed" />
-          <stop offset="100%" stopColor="#ec4899" />
-        </linearGradient>
-      </defs>
-      <g transform={`translate(${size / 2}, ${size / 2})`}>
-        <circle r={radius} cx="0" cy="0" stroke="rgba(255,255,255,0.12)" strokeWidth={stroke} fill="none" />
+    <div style={{ position: 'relative', width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle r={radius} cx={size / 2} cy={size / 2} stroke="rgba(255,255,255,0.05)" strokeWidth={stroke} fill="none" />
         <circle
           r={radius}
-          cx="0"
-          cy="0"
+          cx={size / 2}
+          cy={size / 2}
           stroke="url(#g)"
           strokeWidth={stroke}
           fill="none"
           strokeLinecap="round"
           strokeDasharray={circ}
           strokeDashoffset={offset}
-          transform="rotate(-90)"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          style={{ transition: 'stroke-dashoffset 1s ease-out' }}
         />
-      </g>
-    </svg>
+        <defs>
+          <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#8b5cf6" />
+            <stop offset="100%" stopColor="#ec4899" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div style={{
+        position: 'absolute',
+        top: 0, left: 0, width: '100%', height: '100%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '1.25rem', fontWeight: 800, color: '#fff'
+      }}>
+        {percent}%
+      </div>
+    </div>
   );
 }

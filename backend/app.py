@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from utils import load_model, predict_image
+from utils import load_model, predict_image, save_prediction_to_db
 
 app = Flask(__name__)
 CORS(app)
@@ -11,7 +11,7 @@ model = load_model()
 def home():
     return jsonify({"message": "Multi-class skin detector running"})
 
-@app.route("/predict", methods=["POST"])
+@app.route("/detect", methods=["POST"])
 def predict():
     if "image" not in request.files:
         return jsonify({"error": "Image not provided"}), 400
@@ -20,6 +20,10 @@ def predict():
 
     try:
         pred_class, confidence, top3 = predict_image(model, file)
+        
+        # Save to database
+        save_prediction_to_db(file.filename, pred_class, confidence)
+        
         return jsonify({
             "prediction": pred_class,
             "confidence": confidence,

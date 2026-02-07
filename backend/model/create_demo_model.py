@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import models, layers
 
-NUM_CLASSES = 3
+NUM_CLASSES = 5
 INPUT_SHAPE = (224,224,3)
 
 base = tf.keras.applications.MobileNetV2(input_shape=INPUT_SHAPE, include_top=False, weights=None)
@@ -21,5 +21,5 @@ y = tf.keras.utils.to_categorical(np.random.randint(0, NUM_CLASSES, size=(200,))
 
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 model.fit(X, y, epochs=3, batch_size=16)
-model.save('backend/model/mobilenet_skin_demo.h5')
-print('Saved mobilenet_skin_demo.h5')
+model.save('backend/model/skin_model.h5')
+print('Saved skin_model.h5')

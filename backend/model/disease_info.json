@@ -1,0 +1,59 @@
+{
+    "Eczema": {
+        "full_name": "Atopic Dermatitis (Eczema)",
+        "risk_level": "Low to Moderate",
+        "symptoms": [
+            "Dry skin",
+            "Itching",
+            "Red to brownish-gray patches",
+            "Small, raised bumps"
+        ],
+        "recommendation": "Maintain skin moisture using hypoallergenic creams. Avoid harsh soaps. Consult a dermatologist if itching persists or skin becomes infected.",
+        "warning": "Avoid scratching as it can cause skin thickening and potential infections."
+    },
+    "Melanoma": {
+        "full_name": "Malignant Melanoma",
+        "risk_level": "High",
+        "symptoms": [
+            "A large brownish spot with darker speckles",
+            "A mole that changes in color, size or feel",
+            "A small lesion with an irregular border",
+            "Dark lesions on palms or soles"
+        ],
+        "recommendation": "IMMEDIATE CONSULTATION REQUIRED. Melanoma is a serious form of skin cancer. Early detection is crucial for successful treatment.",
+        "warning": "Do not delay medical evaluation. This condition requires professional diagnosis and potentially a biopsy."
+    },
+    "Normal": {
+        "full_name": "Healthy Skin",
+        "risk_level": "None",
+        "symptoms": [
+            "No visible lesions",
+            "Uniform texture",
+            "Even Pigmentation"
+        ],
+        "recommendation": "Continue regular skin care and sun protection (SPF 30+). Monitor for any new or changing spots as part of routine health checks.",
+        "warning": "Always protect your skin from excessive UV exposure."
+    },
+    "Psoriasis": {
+        "full_name": "Psoriasis",
+        "risk_level": "Moderate",
+        "symptoms": [
+            "Red patches of skin covered with thick, silvery scales",
+            "Dry, cracked skin that may bleed",
+            "Itching, burning or soreness"
+        ],
+        "recommendation": "Topical treatments, light therapy, and stress management are often helpful. Consult a doctor for a personalized treatment plan.",
+        "warning": "Psoriasis can be associated with other health conditions like psoriatic arthritis."
+    },
+    "Basal Cell Carcinoma": {
+        "full_name": "Basal Cell Carcinoma",
+        "risk_level": "High",
+        "symptoms": [
+            "A pearly or waxy bump",
+            "A flat, flesh-colored or brown scar-like lesion",
+            "A bleeding or scabbing sore that heals and returns"
+        ],
+        "recommendation": "Schedule a dermatological exam. While rarely spreading to other parts of the body, it can be locally invasive.",
+        "warning": "Treating early prevents significant tissue damage."
+    }
+}

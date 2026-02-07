@@ -24,7 +24,9 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: skin_db
+      MYSQL_DATABASE: ai_app
+      MYSQL_USER: aiuser
+      MYSQL_PASSWORD: aipass
     ports:
       - "3307:3306"
     volumes:
